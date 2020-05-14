@@ -59,7 +59,7 @@ else #input and save variables to file ####### check error on setup no node name
 	ME=`basename "$0"`
 
 	if [ ! -f "$HOME/bin" ] ; then mkdir $HOME/bin ; fi
-	mv "$DIR/$ME" $HOME/bin/$SCRIPTNAME
+	cp "$DIR/$ME" $HOME/bin/$SCRIPTNAME
 
 	echo "servname=$servname" >> "$input.myconfig"
 	echo "myport=$myport" >> "$input.myconfig"
