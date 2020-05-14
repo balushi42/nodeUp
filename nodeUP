@@ -30,10 +30,10 @@
 ############################################################################
 ############################################################################
 
+##	DO NOT CHANGE  ##
 #declare node logger file location
 serverconfig=".nodes"
 input="$HOME/$serverconfig"
-##	DO NOT CHANGE  ##
 SCRIPTNAME=nodeUP
 
 #check if node has previously setup variables to overwrite, maintain states between updates
