@@ -10,8 +10,15 @@
 #
 ########################    	Extra details		########################
 ############################################################################
-# .servers file syntax:
-# node-name:ip-address:user:ssh-port:date-inserted
+# functions:
+#	-h --help			list help commands
+#	-l --list			list saved servers from .nodes and check if they are online
+#	-u --update			update known servers, send my ip address to known hosts
+#	-cp --copy [src] [dst]		copy a file from/to a known host
+#	-c --connect [node]		connect to a known host
+#	-a --add			start the node addition helper, add node to "subnet"
+#	-i --introduce [node] [node]	introduce two nodes to one another
+#	--forget [node]			forget given node, remove keys and records
 #	#	#	#	#	#	#	#	#	#	#	#	#	#
 # repeat(default=false):
 # the repeat function is used to tansmit locally known hosts to the clients as a tweeter node
@@ -21,12 +28,8 @@
 # Script will install itself into users home bin folder, (the .profile file and bin folder will be checked, then install itself accordingly)
 ############################	REQUIREMENTS	############################
 ############################################################################
-# must be on linux system with a designated account with appropriate privlages,
-# anyone is able to edit files and possibly system configs as the user provided
-# if the privliges are not checked.
-#	#	#	#	#	#	#	#	#	#	#	#	#	#
 # Software assumes all nodes are uniquely identified by their "node names" make sure
-# no two added nodes have the same name.
+# no two added nodes have the same name within the same "subnet".
 ############################################################################
 ############################################################################
 
@@ -39,7 +42,7 @@ SCRIPTNAME=nodeUP
 #check if node has previously setup variables to overwrite, maintain states between updates
 if [ -f "$input.myconfig" ] ; then
 	source "$input.myconfig"
-else #input and save variables to file ####### check error on setup no node name and addr details
+else #input and save variables to file
 	echo "First use detected, input setup variables to save"
 	while ! [[ $correct =~ ^yes$ ]]; do
 		while ! [[ $servname =~ ^[a-zA-Z0-9]+$ ]] ; do read -p "Enter a name for this node(a-Z1-9):" servname; done
@@ -94,7 +97,7 @@ elif [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	printf "%25s\t-\t%s\n" "-h --help" "list help commands(this page)"
 	printf "%25s\t-\t%s\n" "-l --list" "list saved servers from $input"
 	printf "%25s\t-\t%s\n" "-u --update" "update known servers, send my ip address to known hosts"
-	printf "%25s\t-\t%s\n" "-cp --copy [src] [dst]" "copy a file from/to a known host(Note: Use Absolute Paths)"
+	printf "%25s\t-\t%s\n" "-cp --copy [src] [dst]" "copy a file from/to a known host"
 	printf "%25s\t-\t%s\n" "-c --connect [node]" "connect to a known host"
 	printf "%25s\t-\t%s\n" "-a --add" "start the node addition helper"
 	printf "%25s\t-\t%s\n" "-i --introduce [node] [node]" "introduce two nodes to one another"
@@ -225,7 +228,7 @@ elif [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
 	if [ "$#" -ne 2 ] ; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h" ; else
 		if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$input" ; then echo "error: Host $2 not found" ; else
 			IFS=':' read -r -a node <<< $(grep "$2" "$input")
-			#MODIFY FOR SPECIAL CONSOLE
+			#MODIFY FOR SPECIAL SSH CONSOLE
 			ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}"
 		fi
 	fi
@@ -233,12 +236,12 @@ elif [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
 elif [ "$1" == "-u" ] || [ "$1" == "--update" ] || [ $# = 0 ]; then
 	while IFS= read -r -u3 line; do
 		IFS=':' read -r -a node <<< "$line"
-		if [ "$repeat" = true ] ; then #repeater block check -- let current client have all known hosts before updating ip
+		if [ "$repeat" = true ] ; then #repeater block check
 			echo "repeating known hosts to ${node[0]}"
-			clienthostsfile="$HOME/.ssh/.${node[0]}" #location to save the retrived .servers file from client
+			clienthostsfile="$HOME/.ssh/.${node[0]}" #location to save the retrived .nodes file from client
 			if ! scp -P ${node[3]} -i $HOME/.ssh/${node[0]} ${node[2]}@${node[1]}:~/$serverconfig $clienthostsfile >&/dev/null ; then echo "client ${node[0]} does not have the $serverconfig file correctly setup, please double check if possible error in local configurations?" ; else
 				for host in $HOME/.ssh/* ; do #for each known host in .ssh check if client has host details
-					if ! [ "$host" == "${node[0]}" ] && grep -q "$host" "$input" && ! grep -q "$host" "$clienthostsfile" ; then #if the given key is not from client and the file is detailed in .servers file and is not in the clients .servers file
+					if ! [ "$host" == "${node[0]}" ] && grep -q "$host" "$input" && ! grep -q "$host" "$clienthostsfile" ; then #if the given key is not from client and the file is detailed in .nodes file and is not in the clients .nodes file
 						if [ -f "$input.ignore" ] && grep -q "$host" "$input.ignore"; then echo "ignoring host $host due to the ignore file" ; else
 							bash "$SCRIPTNAME" -i "$host" "${node[0]}"
 						fi
