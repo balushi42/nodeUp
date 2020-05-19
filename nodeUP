@@ -3,10 +3,8 @@
 ##########################	  MASTER TO-ADD		############################
 ############################################################################
 # touch up on console printing (SPECIFICALLY THE ADDER)
-# when updating the clients use printf to print without newline and tack on result when done
 # add variables to control the fine tuning of the tools used, eg the timeout used for ssh checking
 # create feature to keep code updated between the nodes, if authentic update is found replace files
-# optimize
 #
 ########################    	Extra details		########################
 ############################################################################
@@ -22,19 +20,20 @@
 #	#	#	#	#	#	#	#	#	#	#	#	#	#
 # repeat(default=false):
 # the repeat function is used to tansmit locally known hosts to the clients as a tweeter node
-# to avoid transmitting some nodes you may create a '$serverconfig'.ignore file eg .nodes.ignore etc;
-# the known "Host" name is used to determine which nodes should be ignored, the file should be a list of hostnames each on a new line
+# to avoid transmitting some nodes you may create a .nodes.ignore file
+# the known "node names" is used to determine which nodes should be ignored, the file should be a list of hostnames, each on a new line
 #	#	#	#	#	#	#	#	#	#	#	#	#	#
-# Script will install itself into users home bin folder, (the .profile file and bin folder will be checked, then install itself accordingly)
+# Script will install itself into users ~/home/bin folder, (the .bashrc file and the ~/home/bin folder will be checked, then install itself accordingly)
 ############################	REQUIREMENTS	############################
 ############################################################################
-# Software assumes all nodes are uniquely identified by their "node names" make sure
-# no two added nodes have the same name within the same "subnet".
+#
+# Software assumes all nodes are uniquely identified by their "node names" within a "subnet"
+#
 ############################################################################
 ############################################################################
 
-##	DO NOT CHANGE  ##
-#declare node logger file location
+
+#declare the node details logger file locations
 serverconfig=".nodes"
 input="$HOME/$serverconfig"
 SCRIPTNAME=nodeUP
