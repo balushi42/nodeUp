@@ -2,9 +2,9 @@
 
 ##########################	  MASTER TO-ADD		############################
 ############################################################################
-# touch up on console printing (use printf, fix add method)
+# touch up on console printing (use printf, clean-up add method)
 # add variables for fine tuning; like timeout for ssh and scp
-# create feature to keep code updated between the nodes, check when to download from node when majority provides same src hash?
+# create feature to keep code updated between the nodes; check when to download from node when majority provides same src hash?
 # make scripts check if anyone on subnet has different serverconfig or servername setup and respond accordingly
 #
 ########################    	Extra details		########################
@@ -19,17 +19,17 @@
 #	-i --introduce [node] [node]	introduce two nodes to one another
 #	--forget [node]			forget given node, remove keys and records
 #	#	#	#	#	#	#	#	#	#	#	#	#	#
-# repeat(default=false):
-# the repeat function is used to tansmit locally known hosts to the clients as a tweeter node
-# to avoid transmitting some nodes you may create a .nodes.ignore file
-# the known "node names" is used to determine which nodes should be ignored, the file should be a list of hostnames, each on a new line
+# Repeat(default=false):
+# the repeat function is used to introduce all locally known hosts(except noted in .ignore) to the current remote node being updated
+# if this is your first run you may create the file .nodes.ignore file and populate it with nodes to ignore
+# the "node names" is used to determine which nodes should be ignored, the file should be a list of hostnames, each on a new line
 #	#	#	#	#	#	#	#	#	#	#	#	#	#
 # Script will install itself into users ~/home/bin folder, (the .bashrc file and the ~/home/bin folder will be checked, then install itself accordingly)
 ############################	REQUIREMENTS	############################
 ############################################################################
 #
 # Software assumes all nodes are uniquely identified by their "node names" within a "subnet"
-# account running the script is assumed to be the desired node PUBLIC account!
+# Account running the script is assumed to be the desired node PUBLIC account!
 #
 ############################################################################
 ############################################################################
@@ -97,11 +97,11 @@ if [ "$1" == "-l" ] || [ "$1" == "--list" ]; then
 elif [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "$0 help page:"
 	printf "%25s\t-\t%s\n" "-h --help" "list help commands(this page)"
-	printf "%25s\t-\t%s\n" "-l --list" "list saved servers from $HOME/$serverconfig"
+	printf "%25s\t-\t%s\n" "-l --list" "list saved servers from $HOME/$serverconfig and check if they are online"
 	printf "%25s\t-\t%s\n" "-u --update" "update known servers, send my ip address to known hosts"
-	printf "%25s\t-\t%s\n" "-cp --copy [src] [dst]" "copy a file from/to a known host"
-	printf "%25s\t-\t%s\n" "-c --connect [node]" "connect to a known host"
-	printf "%25s\t-\t%s\n" "-a --add" "start the node addition helper"
+	printf "%25s\t-\t%s\n" "-cp --copy [src] [dst]" "copy a file from/to a known host (SCP)"
+	printf "%25s\t-\t%s\n" "-c --connect [node]" "connect to a known host (SSH)"
+	printf "%25s\t-\t%s\n" "-a --add" "start the node addition helper, add node to \"subnet\""
 	printf "%25s\t-\t%s\n" "-i --introduce [node] [node]" "introduce two nodes to one another"
 	printf "%25s\t-\t%s\n" "--forget [node]" "forget given node, remove keys and records"
 
@@ -156,7 +156,7 @@ elif [ "$1" == "--forget" ] || [ "$1" == "-F" ] ; then
 	if [ "$#" -ne 2 ] ; then
 		echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"
 	else
-		if [ "$1" == "-F" ] ; then # force forget a node, NOTE: this will only remove local access keys and entries, called on "remote" node when using -f --forget
+		if [ "$1" == "-F" ] ; then # force forget a node, NOTE: this will only remove local access keys and entries, called on "remote" node when using --forget
 			if ! grep -q "$2" "$HOME/$serverconfig" ; then echo "error: Host $2 not found"; else
 				sed -i "/^$2.*\$/d" "$HOME/$serverconfig"
 				rm "$HOME/.ssh/$2"
