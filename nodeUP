@@ -2,9 +2,10 @@
 
 ##########################	  MASTER TO-ADD		############################
 ############################################################################
-# touch up on console printing (SPECIFICALLY THE ADDER)
-# add variables to control the fine tuning of the tools used, eg the timeout used for ssh checking
-# create feature to keep code updated between the nodes, if authentic update is found replace files
+# touch up on console printing (use printf, fix add method)
+# add variables for fine tuning; like timeout for ssh and scp
+# create feature to keep code updated between the nodes, check when to download from node when majority provides same src hash?
+# make scripts check if anyone on subnet has different serverconfig or servername setup and respond accordingly
 #
 ########################    	Extra details		########################
 ############################################################################
@@ -28,73 +29,75 @@
 ############################################################################
 #
 # Software assumes all nodes are uniquely identified by their "node names" within a "subnet"
+# account running the script is assumed to be the desired node PUBLIC account!
 #
 ############################################################################
 ############################################################################
 
 
-#declare the node details logger file locations
+#remote nodes file location, exec filename
+#note: make sure these are the SAME across ALL NODES within a "subnet"
 serverconfig=".nodes"
-input="$HOME/$serverconfig"
 SCRIPTNAME=nodeUP
 
-#check if node has previously setup variables to overwrite, maintain states between updates
-if [ -f "$input.myconfig" ] ; then
-	source "$input.myconfig"
-else #input and save variables to file
-	echo "First use detected, input setup variables to save"
-	while ! [[ $correct =~ ^yes$ ]]; do
-		while ! [[ $servname =~ ^[a-zA-Z0-9]+$ ]] ; do read -p "Enter a name for this node(a-Z1-9):" servname; done
-		while ! [[ $myport =~ ^[0-9]+$ ]] ; do read -p "Enter the SSH port used:" myport; done
+#check for .nodes.myconfig file, use this file to save node details (name, port, repeat=false)
+if [ ! -f "$HOME/$serverconfig.myconfig" ] ; then
+	echo "First use detected... please input next setup parameters carefully:-"
+	while ! [[ "$correct" =~ ^yes$ ]]; do
+		while ! [[ "$servname" =~ ^[a-zA-Z0-9]+$ ]] ; do read -p "Enter a name for this node(a-Z1-9):" servname; done
+		while ! [[ "$myport" =~ ^[0-9]+$ ]] ; do read -p "Enter the SSH port used:" myport; done
 		read -p "Would you like to use this node as a RPEATER?(y/N):" repeat; echo ""
-		if [[ $repeat =~ ^[yY]$ ]] ; then repeat=true; else repeat=false; fi
+		if [[ "$repeat" =~ ^[yY]$ ]] ; then repeat=true; else repeat=false; fi
 		read -p "Was the provided information above correct?(type yes to continue):" correct
 	done
+	echo "servname=$servname" >> "$HOME/$serverconfig.myconfig"
+	echo "myport=$myport" >> "$HOME/$serverconfig.myconfig"
+	echo "repeat=$repeat" >> "$HOME/$serverconfig.myconfig"
+
+	chmod 600 "$HOME/$serverconfig.myconfig"
+	echo "Saved into $HOME/$serverconfig.myconfig"
 
 	####	Install Script	####
-	if ! grep -q '$HOME/bin' $HOME/.bashrc ; then
-		echo 'if [ -d "$HOME/bin" ] ; then PATH="$HOME/bin:$PATH" ; fi' >> $HOME/.bashrc
+	if ! grep -q '$HOME/bin' "$HOME/.bashrc" ; then # check if .bashrc has $HOME/bin entry..
+		echo 'if [ -d "$HOME/bin" ] ; then PATH="$HOME/bin:$PATH" ; fi' >> "$HOME/.bashrc"
 		echo "please logout and back in for effects to take place!"
 	fi
 
 	DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 	ME=`basename "$0"`
 
-	if [ ! -f "$HOME/bin" ] ; then mkdir $HOME/bin ; fi
-	cp "$DIR/$ME" $HOME/bin/$SCRIPTNAME
+	if [ ! -f "$HOME/bin" ] ; then mkdir "$HOME/bin" ; fi
+	cp "$DIR/$ME" "$HOME/bin/$SCRIPTNAME"
+#import config if found
+else source "$HOME/$serverconfig.myconfig"; fi
 
-	echo "servname=$servname" >> "$input.myconfig"
-	echo "myport=$myport" >> "$input.myconfig"
-	echo "repeat=$repeat" >> "$input.myconfig"
-
-	chmod 600 "$input.myconfig"
-fi
-
-#check if serverconfig file exists
-if [ ! -f "$input" ]; then
+#check for .nodes file & remove old entries (lower is newer!)
+if [ ! -f "$HOME/$serverconfig" ]; then 
 	echo "file $serverconfig not found... creating new at home dir."
-	touch "$input" && chmod 600 "$input"
+	touch "$HOME/$serverconfig" && chmod 600 "$HOME/$serverconfig"
 else
 	echo "Removing duplicate records..."
-	record=$(cat $input | awk -F: -vOFS=':' '{array[$1]=$0} END{for(a in array) print array[a]}')
-	if ! [ -z $record ]; then echo "$record" > "$input"; fi
+	record=$(cat "$HOME/$serverconfig" | awk -F: -vOFS=':' '{array[$1]=$0} END{for(a in array) print array[a]}')
+	if ! [ -z "$record" ]; then echo "$record" > "$HOME/$serverconfig"; fi
 fi
 
 ############################	FLAG TESTING	############################
 ############################################################################
 if [ "$1" == "-l" ] || [ "$1" == "--list" ]; then
 	echo "Servers List"
+	#print table head
 	printf "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n" "Node name" "IP Address" "Username" "SSH port" "Date Updated" "STATUS"
 	while IFS= read -r -u3 line; do
 		IFS=':' read -r -a node <<< "$line"
+		#check if server is online
 		if ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}" "echo ping" >&/dev/null ; then cStat="Online" ; else cStat="Offline" ; fi #check if the given host is online
 		printf "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n" "${node[0]}" "${node[1]}" "${node[2]}" "${node[3]}" "${node[4]}" "$cStat"
-	done 3< "$input"
+	done 3< "$HOME/$serverconfig"
 
 elif [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "$0 help page:"
 	printf "%25s\t-\t%s\n" "-h --help" "list help commands(this page)"
-	printf "%25s\t-\t%s\n" "-l --list" "list saved servers from $input"
+	printf "%25s\t-\t%s\n" "-l --list" "list saved servers from $HOME/$serverconfig"
 	printf "%25s\t-\t%s\n" "-u --update" "update known servers, send my ip address to known hosts"
 	printf "%25s\t-\t%s\n" "-cp --copy [src] [dst]" "copy a file from/to a known host"
 	printf "%25s\t-\t%s\n" "-c --connect [node]" "connect to a known host"
@@ -103,10 +106,10 @@ elif [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	printf "%25s\t-\t%s\n" "--forget [node]" "forget given node, remove keys and records"
 
 elif [ "$1" == "-a" ] || [ "$1" == "--add" ] || [ "$1" == "-aremote" ] ; then
-	if [ "$1" == "-aremote" ] ; then # remote node addition helper code
+	if [ "$1" == "-aremote" ] ; then # node addition helper code for "remote" machine!
 		echo "Welcome to the $0 node addition helper(remote), this is kinda early stage"
 		echo "Please enter the provided details from the first machine:"
-		while ! [[ $correct =~ ^yes$ ]]; do
+		while ! [[ "$correct" =~ ^yes$ ]]; do
 			read -p "Enter the provided MYname:" rname
 			read -p "Enter the IP Port User(space seperated):" rip rport ruser
 			read -p "Was the provided information above correct?(type yes to continue):" correct
@@ -123,7 +126,7 @@ elif [ "$1" == "-a" ] || [ "$1" == "--add" ] || [ "$1" == "-aremote" ] ; then
 		read -p "Enter the provied SSH Auth Key:" rkey
 		rkey=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< "$rkey" && printf '%s@%s\n' "$ruser" "$rname")
 		echo "$rkey" >> "$HOME/.ssh/authorized_keys"; rkey=""
-		echo "$rname:$rip:$ruser:$rport:$(date +%x:%H:%M:%S)" >> "$input"
+		echo "$rname:$rip:$ruser:$rport:$(date +%x:%H:%M:%S)" >> "$HOME/$serverconfig"
 		echo "Entry has been recorded"
 		echo "My updated IP will be sent next script run with -u flag."
 	else # local node addition helper code
@@ -144,7 +147,7 @@ elif [ "$1" == "-a" ] || [ "$1" == "--add" ] || [ "$1" == "-aremote" ] ; then
 		echo "COPY THIS KEY INTO THE REMOTE HOST NOW!!!"
 		mykey=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $(cat "$HOME/.ssh/$rname.pub") && printf '%s@%s\n' "$USER" "$servname") && rm "$HOME/.ssh/$rname.pub"
 		echo ""; echo "$mykey"; echo ""
-		echo "$rname:$rip:$ruser:$rport:$(date +%x:%H:%M:%S)" >> "$input"
+		echo "$rname:$rip:$ruser:$rport:$(date +%x:%H:%M:%S)" >> "$HOME/$serverconfig"
 		echo "Entry has been recorded"
 		echo "My updated IP will be sent next script run with -u flag."
 	fi
@@ -153,25 +156,24 @@ elif [ "$1" == "--forget" ] || [ "$1" == "-F" ] ; then
 	if [ "$#" -ne 2 ] ; then
 		echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"
 	else
-		if [ "$1" == "-F" ] ; then
-			if ! grep -q "$2" "$input" ; then echo "error: Host $2 not found"; else
-				sed -i "/^$2.*\$/d" "$input"
+		if [ "$1" == "-F" ] ; then # force forget a node, NOTE: this will only remove local access keys and entries, called on "remote" node when using -f --forget
+			if ! grep -q "$2" "$HOME/$serverconfig" ; then echo "error: Host $2 not found"; else
+				sed -i "/^$2.*\$/d" "$HOME/$serverconfig"
 				rm "$HOME/.ssh/$2"
 				sed -i "/^.+${node[2]}@${node[0]}\$/d" "$HOME/.ssh/authorized_keys"
 			fi
 		else
-			if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$input" ; then echo "error: Host $2 not found" ; else
+			if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$HOME/$serverconfig" ; then echo "error: Host $2 not found" ; else
 				read -p "Are you sure? (to continue type HostName: $2) " reply
-				if ! [[ $reply =~ ^$2$ ]] ; then echo "Reply did not match, quitting..." ; else
+				if ! [[ "$reply" =~ ^$2$ ]] ; then echo "Reply did not match, quitting..." ; else
 					me=`basename "$0"`
-					IFS=':' read -r -a node <<< $(grep "$2" "$input")
-					# use -F flag on remote server to remove me ######## change the script location to become absolute (installs itself?) ### CURRENT ASSUMPTION SCRIPT AT HOME
+					IFS=':' read -r -a node <<< $(grep "$2" "$HOME/$serverconfig")
 					printf '%s' "Removal of remote entries at node $2..."
 					if ! ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}" "$SCRIPTNAME -F $servname" >&/dev/null ; then
 						echo "fail"; echo "error: Failed to remove records from remote node $2. quitting..."
 					else #remove local entries
 						printf '%s\n' "done"
-						sed -i "/^$2.*\$/d" "$input"
+						sed -i "/^$2.*\$/d" "$HOME/$serverconfig"
 						rm "$HOME/.ssh/$2"
 						sed -i "/^.+${node[2]}@${node[0]}\$/d" "$HOME/.ssh/authorized_keys"
 						echo "Removal of local entries...done"
@@ -183,19 +185,19 @@ elif [ "$1" == "--forget" ] || [ "$1" == "-F" ] ; then
 	
 elif [ "$1" == "-cp" ] || [ "$1" == "--copy" ]; then
 	if [ "$#" -ne 3 ]; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"
-	else #check validity of passed arguments, MAKE SURE THE USER IS ABLE TO INPUT ALL VALID SCP LOCATIONS ###################################
-		if [[ $2 =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] && [[ $3 =~ ^[^\0:]+$ ]] ; then # syntax : from-remote to-local
-			rnode=$(cut -f1 -d: <<< $2)
-			rpath=$(cut -f2 -d: <<< $2)
-			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$input" ; then echo "error: node $rnode not found..." ; else
-				IFS=':' read -r -a node <<< $(grep "$rnode" "$input")
+	else 
+		if [[ "$2" =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] && [[ "$3" =~ ^[^\0:]+$ ]] ; then # syntax: from-remote to-local
+			rnode=$(cut -f1 -d: <<< "$2")
+			rpath=$(cut -f2 -d: <<< "$2")
+			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$HOME/$serverconfig" ; then echo "error: node $rnode not found..." ; else
+				IFS=':' read -r -a node <<< $(grep "$rnode" "$HOME/$serverconfig")
 				if ! scp -P "${node[3]}" -i "$HOME/.ssh/${node[0]}" "${node[2]}@${node[1]}:$rpath" "$3" >&/dev/null ; then echo "error: failed to download!" ; fi
 			fi
-		elif [[ $2 =~ ^[^\0:]+$ ]] && [[ $3 =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] ; then # syntax : from-local to-remote
-			rnode=$(cut -f1 -d: <<< $3)
-			rpath=$(cut -f2 -d: <<< $3)
-			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$input" ; then echo "error: node $rnode not found..." ; else
-				IFS=':' read -r -a node <<< $(grep "$rnode" "$input")
+		elif [[ "$2" =~ ^[^\0:]+$ ]] && [[ "$3" =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] ; then # syntax: from-local to-remote
+			rnode=$(cut -f1 -d: <<< "$3")
+			rpath=$(cut -f2 -d: <<< "$3")
+			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$HOME/$serverconfig" ; then echo "error: node $rnode not found..." ; else
+				IFS=':' read -r -a node <<< $(grep "$rnode" "$HOME/$serverconfig")
 				if ! scp -P "${node[3]}" -i "$HOME/.ssh/${node[0]}" "$2" "${node[2]}@${node[1]}:$rpath" >&/dev/null ; then echo "error: failed to upload!" ; fi
 			fi
 		else echo "The passed Source/Destination variable(s) are not formatted correctly. please check $0 -h" ; fi
@@ -203,8 +205,8 @@ elif [ "$1" == "-cp" ] || [ "$1" == "--copy" ]; then
 
 elif [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
 	if [ "$#" -ne 2 ] ; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h" ; else
-		if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$input" ; then echo "error: Host $2 not found" ; else
-			IFS=':' read -r -a node <<< $(grep "$2" "$input")
+		if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$HOME/$serverconfig" ; then echo "error: Host $2 not found" ; else
+			IFS=':' read -r -a node <<< $(grep "$2" "$HOME/$serverconfig")
 			#MODIFY FOR SPECIAL SSH CONSOLE
 			ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}"
 		fi
@@ -212,13 +214,13 @@ elif [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
 
 elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
 	if [ "$#" -ne 3 ]; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"; else
-		if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$input" ; then echo "error: unknown node $2"; else
-			if ! [ -f "$HOME/.ssh/$3" ] || ! grep -q "$3" "$input" ; then echo "error: unknown node $3"; else
-				n1=$(grep "$2" "$input")
-				n2=$(grep "$3" "$input")
-				IFS=':' read -r -a node1 <<< $n1
-				IFS=':' read -r -a node2 <<< $n2
-				#make sure both servers are online before starting
+		if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$HOME/$serverconfig" ; then echo "error: unknown node $2"; else
+			if ! [ -f "$HOME/.ssh/$3" ] || ! grep -q "$3" "$HOME/$serverconfig" ; then echo "error: unknown node $3"; else
+				n1=$(grep "$2" "$HOME/$serverconfig")
+				n2=$(grep "$3" "$HOME/$serverconfig")
+				IFS=':' read -r -a node1 <<< "$n1"
+				IFS=':' read -r -a node2 <<< "$n2"
+				#make sure both servers are online
 				if ! ssh "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo ping" >&/dev/null ; then echo "error: ${node1[0]} seems to be offline"; else
 					if ! ssh "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "echo ping" >&/dev/null ; then echo "error: ${node2[0]} seems to be offline"; else
 						n2keytmp=$(ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i $HOME/.ssh/${node1[0]} "ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node2[0]} >&/dev/null && cat \$HOME/.ssh/${node2[0]}.pub && rm \$HOME/.ssh/${node2[0]}.pub && echo '$n2' >> $serverconfig")
@@ -235,24 +237,24 @@ elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
 elif [ "$1" == "-u" ] || [ "$1" == "--update" ] || [ $# = 0 ]; then
 	while IFS= read -r -u3 line; do
 		IFS=':' read -r -a node <<< "$line"
-		if [ "$repeat" = true ] ; then #repeater block check
+		if [ "$repeat" = true ] ; then
 			echo "repeating known hosts to ${node[0]}"
-			clienthostsfile="$HOME/.ssh/.${node[0]}" #location to save the retrived .nodes file from client
-			if ! scp -P ${node[3]} -i $HOME/.ssh/${node[0]} ${node[2]}@${node[1]}:~/$serverconfig $clienthostsfile >&/dev/null ; then echo "client ${node[0]} does not have the $serverconfig file correctly setup, please double check if possible error in local configurations?" ; else
+			clienthostsfile="$HOME/.ssh/.${node[0]}" #save the retrived .nodes file from "remote" as .ssh/"node-name"
+			if ! scp -P "${node[3]}" -i "$HOME/.ssh/${node[0]}" "${node[2]}@${node[1]}:~/$serverconfig $clienthostsfile" >&/dev/null ; then echo "client ${node[0]} does not have the $serverconfig file correctly setup, please double check if possible error in local configurations?" ; else
 				for host in $HOME/.ssh/* ; do #for each known host in .ssh check if client has host details
-					if ! [ "$host" == "${node[0]}" ] && grep -q "$host" "$input" && ! grep -q "$host" "$clienthostsfile" ; then #if the given key is not from client and the file is detailed in .nodes file and is not in the clients .nodes file
-						if [ -f "$input.ignore" ] && grep -q "$host" "$input.ignore"; then echo "ignoring host $host due to the ignore file" ; else
+					if ! [ "$host" == "${node[0]}" ] && grep -q "$host" "$HOME/$serverconfig" && ! grep -q "$host" "$clienthostsfile" ; then #if the given key is not from client and the file is detailed in .nodes file and is not in the clients .nodes file
+						if [ -f "$HOME/$serverconfig.ignore" ] && grep -q "$host" "$HOME/$serverconfig.ignore"; then echo "ignoring host $host due to the ignore file" ; else
 							bash "$SCRIPTNAME" -i "$host" "${node[0]}"
 						fi
 					fi
 				done
-				rm $clienthostsfile
+				rm "$clienthostsfile"
 			fi
 		fi
 		echo "sending my ip address to: ${node[2]}@${node[1]} on port ${node[3]}"
-		if ! ssh ${node[2]}@${node[1]} -p ${node[3]} -i $HOME/.ssh/${node[0]} "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> $serverconfig" >&/dev/null ; then #send new copy of my ip address to the client
+		if ! ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}" "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> $serverconfig" >&/dev/null ; then #send new copy of my ip address to the client
 			echo "Failed to send..."
 		fi
-	done 3< "$input"
+	done 3< "$HOME/$serverconfig"
 
 else echo "unknown command $1 please use -h or --help flag for more information on how to use this script" ; fi
