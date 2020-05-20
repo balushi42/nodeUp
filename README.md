@@ -3,10 +3,10 @@ just bash practice :)
 
 Update IP address records between nodes without using Dynamic DNS servers. The program mainly uses SSH for operations; therefore all known nodes can be accessed as PUBLIC SPACE keep accounts secure!
 
-Note: preferably create a secured account then copy the script into the users home directory and run as the newly created account...
+Side Note: preferably create a secured account then copy the script into the users home directory and run as the newly created account...
 
 # Repeater mode
-On the first script run you will have the option to decide if the current node should be treated as a repeater. When using the current node as a repeater, the script will introduce all locally known hosts(except noted in .ignore) to the current host being updated before concluding with writing the nodes IP and records to the .nodes file
+On the first script run you will have the option to decide if the current node should be treated as a repeater. When using the current node as a repeater, the script will introduce all locally known hosts(except noted in .ignore) to the current remote node being updated. Then the script concludes by writing the local IP into the remote node '.nodes' file
 
 Ignoring hosts: to prevent the script from transmitting a given host, please add the "node name" of the host into the file .nodes.ignore
 ### Example cat of .nodes.ignore(create if missing):
