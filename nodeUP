@@ -102,48 +102,6 @@ elif [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	printf "%25s\t-\t%s\n" "-i --introduce [node] [node]" "introduce two nodes to one another"
 	printf "%25s\t-\t%s\n" "--forget [node]" "forget given node, remove keys and records"
 
-elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
-	if [ "$#" -ne 3 ]; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"; else
-		if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$input" ; then echo "error: unknown node $2"; else
-			if ! [ -f "$HOME/.ssh/$3" ] || ! grep -q "$3" "$input" ; then echo "error: unknown node $3"; else
-				n1=$(grep "$2" "$input")
-				n2=$(grep "$3" "$input")
-				IFS=':' read -r -a node1 <<< $n1
-				IFS=':' read -r -a node2 <<< $n2
-				#make sure both servers are online before starting
-				if ! ssh "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo ping" >&/dev/null ; then echo "error: ${node1[0]} seems to be offline"; else
-					if ! ssh "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "echo ping" >&/dev/null ; then echo "error: ${node2[0]} seems to be offline"; else
-						n2keytmp=$(ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i $HOME/.ssh/${node1[0]} "ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node2[0]} >&/dev/null && cat \$HOME/.ssh/${node2[0]}.pub && rm \$HOME/.ssh/${node2[0]}.pub && echo '$n2' >> $serverconfig")
-						n2key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n2keytmp && printf '%s@%s\n' "${node1[2]}" "${node1[0]}")
-						n1keytmp=$(ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i $HOME/.ssh/${node2[0]} "echo '$n2key' >> \$HOME/.ssh/authorized_keys; ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node1[0]} >&/dev/null && cat \$HOME/.ssh/${node1[0]}.pub && rm \$HOME/.ssh/${node1[0]}.pub && echo '$n1' >> $serverconfig")
-						n1key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n1keytmp && printf '%s@%s\n' "${node2[2]}" "${node2[0]}")
-						ssh "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys"
-					fi
-				fi
-			fi
-		fi
-	fi
-
-elif [ "$1" == "-cp" ] || [ "$1" == "--copy" ]; then
-	if [ "$#" -ne 3 ]; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"
-	else #check validity of passed arguments, MAKE SURE THE USER IS ABLE TO INPUT ALL VALID SCP LOCATIONS ###################################
-		if [[ $2 =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] && [[ $3 =~ ^[^\0:]+$ ]] ; then # syntax : from-remote to-local
-			rnode=$(cut -f1 -d: <<< $2)
-			rpath=$(cut -f2 -d: <<< $2)
-			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$input" ; then echo "error: node $rnode not found..." ; else
-				IFS=':' read -r -a node <<< $(grep "$rnode" "$input")
-				if ! scp -P "${node[3]}" -i "$HOME/.ssh/${node[0]}" "${node[2]}@${node[1]}:$rpath" "$3" >&/dev/null ; then echo "error: failed to download!" ; fi
-			fi
-		elif [[ $2 =~ ^[^\0:]+$ ]] && [[ $3 =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] ; then # syntax : from-local to-remote
-			rnode=$(cut -f1 -d: <<< $3)
-			rpath=$(cut -f2 -d: <<< $3)
-			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$input" ; then echo "error: node $rnode not found..." ; else
-				IFS=':' read -r -a node <<< $(grep "$rnode" "$input")
-				if ! scp -P "${node[3]}" -i "$HOME/.ssh/${node[0]}" "$2" "${node[2]}@${node[1]}:$rpath" >&/dev/null ; then echo "error: failed to upload!" ; fi
-			fi
-		else echo "The passed Source/Destination variable(s) are not formatted correctly. please check $0 -h" ; fi
-	fi
-
 elif [ "$1" == "-a" ] || [ "$1" == "--add" ] || [ "$1" == "-aremote" ] ; then
 	if [ "$1" == "-aremote" ] ; then # remote node addition helper code
 		echo "Welcome to the $0 node addition helper(remote), this is kinda early stage"
@@ -222,6 +180,26 @@ elif [ "$1" == "--forget" ] || [ "$1" == "-F" ] ; then
 			fi
 		fi
 	fi
+	
+elif [ "$1" == "-cp" ] || [ "$1" == "--copy" ]; then
+	if [ "$#" -ne 3 ]; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"
+	else #check validity of passed arguments, MAKE SURE THE USER IS ABLE TO INPUT ALL VALID SCP LOCATIONS ###################################
+		if [[ $2 =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] && [[ $3 =~ ^[^\0:]+$ ]] ; then # syntax : from-remote to-local
+			rnode=$(cut -f1 -d: <<< $2)
+			rpath=$(cut -f2 -d: <<< $2)
+			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$input" ; then echo "error: node $rnode not found..." ; else
+				IFS=':' read -r -a node <<< $(grep "$rnode" "$input")
+				if ! scp -P "${node[3]}" -i "$HOME/.ssh/${node[0]}" "${node[2]}@${node[1]}:$rpath" "$3" >&/dev/null ; then echo "error: failed to download!" ; fi
+			fi
+		elif [[ $2 =~ ^[^\0:]+$ ]] && [[ $3 =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] ; then # syntax : from-local to-remote
+			rnode=$(cut -f1 -d: <<< $3)
+			rpath=$(cut -f2 -d: <<< $3)
+			if ! [ -f "$HOME/.ssh/$rnode" ] || ! grep -q "$rnode" "$input" ; then echo "error: node $rnode not found..." ; else
+				IFS=':' read -r -a node <<< $(grep "$rnode" "$input")
+				if ! scp -P "${node[3]}" -i "$HOME/.ssh/${node[0]}" "$2" "${node[2]}@${node[1]}:$rpath" >&/dev/null ; then echo "error: failed to upload!" ; fi
+			fi
+		else echo "The passed Source/Destination variable(s) are not formatted correctly. please check $0 -h" ; fi
+	fi
 
 elif [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
 	if [ "$#" -ne 2 ] ; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h" ; else
@@ -229,6 +207,28 @@ elif [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
 			IFS=':' read -r -a node <<< $(grep "$2" "$input")
 			#MODIFY FOR SPECIAL SSH CONSOLE
 			ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}"
+		fi
+	fi
+
+elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
+	if [ "$#" -ne 3 ]; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"; else
+		if ! [ -f "$HOME/.ssh/$2" ] || ! grep -q "$2" "$input" ; then echo "error: unknown node $2"; else
+			if ! [ -f "$HOME/.ssh/$3" ] || ! grep -q "$3" "$input" ; then echo "error: unknown node $3"; else
+				n1=$(grep "$2" "$input")
+				n2=$(grep "$3" "$input")
+				IFS=':' read -r -a node1 <<< $n1
+				IFS=':' read -r -a node2 <<< $n2
+				#make sure both servers are online before starting
+				if ! ssh "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo ping" >&/dev/null ; then echo "error: ${node1[0]} seems to be offline"; else
+					if ! ssh "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "echo ping" >&/dev/null ; then echo "error: ${node2[0]} seems to be offline"; else
+						n2keytmp=$(ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i $HOME/.ssh/${node1[0]} "ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node2[0]} >&/dev/null && cat \$HOME/.ssh/${node2[0]}.pub && rm \$HOME/.ssh/${node2[0]}.pub && echo '$n2' >> $serverconfig")
+						n2key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n2keytmp && printf '%s@%s\n' "${node1[2]}" "${node1[0]}")
+						n1keytmp=$(ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i $HOME/.ssh/${node2[0]} "echo '$n2key' >> \$HOME/.ssh/authorized_keys; ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node1[0]} >&/dev/null && cat \$HOME/.ssh/${node1[0]}.pub && rm \$HOME/.ssh/${node1[0]}.pub && echo '$n1' >> $serverconfig")
+						n1key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n1keytmp && printf '%s@%s\n' "${node2[2]}" "${node2[0]}")
+						ssh "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys"
+					fi
+				fi
+			fi
 		fi
 	fi
 
