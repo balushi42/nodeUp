@@ -40,7 +40,8 @@
 serverconfig=".nodes"
 SCRIPTNAME=nodeUP
 
-#check for .nodes.myconfig file, use this file to save node details (name, port, repeat=false)
+####	Check for .myconfig	####
+#use this file to save LOCAL node details (name, port, repeat=false)
 if [ ! -f "$HOME/$serverconfig.myconfig" ] ; then
 	echo "First use detected... please input next setup parameters carefully:-"
 	while ! [[ "$correct" =~ ^yes$ ]]; do
@@ -56,7 +57,6 @@ if [ ! -f "$HOME/$serverconfig.myconfig" ] ; then
 
 	chmod 600 "$HOME/$serverconfig.myconfig"
 	echo "Saved into $HOME/$serverconfig.myconfig"
-#import config if found
 else source "$HOME/$serverconfig.myconfig"; fi
 
 
@@ -77,7 +77,7 @@ fi
 
 
 
-####	.nodes cleanup	####
+####	.nodes Cleanup	####
 #check for .nodes file & remove old entries (lower is newer!)
 if [ ! -f "$HOME/$serverconfig" ]; then  #create new file
 	echo "file $serverconfig not found... creating new at home dir."
