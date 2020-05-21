@@ -56,26 +56,33 @@ if [ ! -f "$HOME/$serverconfig.myconfig" ] ; then
 
 	chmod 600 "$HOME/$serverconfig.myconfig"
 	echo "Saved into $HOME/$serverconfig.myconfig"
-
-	####	Install Script	####
-	if ! grep -q '$HOME/bin' "$HOME/.bashrc" ; then # check if .bashrc has $HOME/bin entry..
-		echo 'if [ -d "$HOME/bin" ] ; then PATH="$HOME/bin:$PATH" ; fi' >> "$HOME/.bashrc"
-		echo "please logout and back in for effects to take place!"
-	fi
-
-	DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-	ME=`basename "$0"`
-
-	if [ ! -f "$HOME/bin" ] ; then mkdir "$HOME/bin" ; fi
-	cp "$DIR/$ME" "$HOME/bin/$SCRIPTNAME"
 #import config if found
 else source "$HOME/$serverconfig.myconfig"; fi
 
+
+####	Install Script	####
+# check if .bashrc has $HOME/bin entry..
+if ! grep -q '$HOME/bin' "$HOME/.bashrc" ; then
+	echo 'if [ -d "$HOME/bin" ] ; then PATH="$HOME/bin:$PATH" ; fi' >> "$HOME/.bashrc"
+	echo "please logout and back in for effects to take place!"
+fi
+
+# check if script needs to be installed into the ~/bin folder (copy if script found running from outside the bin folder)
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+if [[ ! "$DIR" =~ $HOME/bin ]] ; then
+	if [ ! -d "$HOME/bin" ] ; then mkdir "$HOME/bin" ; fi
+	ME=`basename "$0"`
+	cp "$DIR/$ME" "$HOME/bin/$SCRIPTNAME"
+fi
+
+
+
+####	.nodes cleanup	####
 #check for .nodes file & remove old entries (lower is newer!)
-if [ ! -f "$HOME/$serverconfig" ]; then 
+if [ ! -f "$HOME/$serverconfig" ]; then  #create new file
 	echo "file $serverconfig not found... creating new at home dir."
 	touch "$HOME/$serverconfig" && chmod 600 "$HOME/$serverconfig"
-else
+else #cleanup file
 	echo "Removing duplicate records..."
 	record=$(cat "$HOME/$serverconfig" | awk -F: -vOFS=':' '{array[$1]=$0} END{for(a in array) print array[a]}')
 	if ! [ -z "$record" ]; then echo "$record" > "$HOME/$serverconfig"; fi
@@ -182,10 +189,10 @@ elif [ "$1" == "--forget" ] || [ "$1" == "-F" ] ; then
 			fi
 		fi
 	fi
-	
+
 elif [ "$1" == "-cp" ] || [ "$1" == "--copy" ]; then
 	if [ "$#" -ne 3 ]; then echo "incorrect number of parameters passed, error running the flag $1; please check $0 -h"
-	else 
+	else
 		if [[ "$2" =~ ^[a-zA-Z0-9]+:[^\0:]+$ ]] && [[ "$3" =~ ^[^\0:]+$ ]] ; then # syntax: from-remote to-local
 			rnode=$(cut -f1 -d: <<< "$2")
 			rpath=$(cut -f2 -d: <<< "$2")
