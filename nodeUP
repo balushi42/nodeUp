@@ -5,7 +5,6 @@
 # add variables for fine tuning; like timeout for ssh and scp
 # create feature to keep code updated between the nodes, check when to download from node when majority provides same src hash?
 # make scripts check if anyone on subnet has different serverconfig or servername setup and respond accordingly
-# in --add flag, test if the newly added node details are valid before commiting changes
 # create a local record of my ip address once subnet is populated to remove need for external service
 #
 ########################    	Extra details		########################
