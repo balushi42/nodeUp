@@ -60,7 +60,7 @@ fi
 # check if script needs to be installed into the ~/bin folder (copy if script found running from outside the bin folder)
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 if [[ ! "$DIR" =~ $HOME/bin ]] ; then
-	if [ ! -f "$HOME/bin" ] ; then mkdir "$HOME/bin" ; fi
+	if [ ! -d "$HOME/bin" ] ; then mkdir "$HOME/bin" ; fi
 	ME=`basename "$0"`
 	cp "$DIR/$ME" "$HOME/bin/$SCRIPTNAME"
 	echo "Please logout and back in for effects to take place!"
