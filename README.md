@@ -27,3 +27,6 @@ node3
 	-i --introduce [node] [node]	introduce two nodes to one another
 	-f --forget [node]		forget given node, remove keys and records from both local and remote nodes
 	--force [node]			forget given node, remove keys and records ONLY the local node
+
+#Known issues
+-when introducing two nodes with -i the software may break if you dont manually connect to each node and answer the trusted host question by attemting to connect with -c or just -u!
