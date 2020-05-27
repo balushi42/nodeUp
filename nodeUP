@@ -82,7 +82,24 @@ fi
 
 ############################	FLAG TESTING	############################
 ############################################################################
-if [ "$1" == "-l" ] || [ "$1" == "--list" ]; then
+if [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
+	if [ "$#" -eq 2 ] ; then 
+		if [ -f "$HOME/.ssh/$2" ] && grep -q "$2" "$HOME/$serverconfig" ; then
+			IFS=':' read -r -a node <<< $(grep "$2" "$HOME/$serverconfig")
+			#MODIFY FOR SPECIAL SSH CONSOLE
+			ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}"
+
+			exit 0
+		else
+			echo "Node $2 not found"
+			exit 1
+		fi
+	else
+		echo "Incorrect number of parameters passed with the $1 flag, please check $SCRIPTNAME -h"
+		exit 1
+	fi
+
+elif [ "$1" == "-l" ] || [ "$1" == "--list" ]; then
 	echo "Servers List"
 	printf "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n" "Node name" "IP Address" "Username" "SSH port" "Date Updated" "STATUS"
 	while IFS= read -r -u3 line; do
@@ -268,23 +285,7 @@ elif [ "$1" == "-cp" ] || [ "$1" == "--copy" ]; then
 		exit 1
 	fi
 
-elif [ "$1" == "-c" ] || [ "$1" == "--connect" ] ; then
-	if [ "$#" -eq 2 ] ; then 
-		if [ -f "$HOME/.ssh/$2" ] && grep -q "$2" "$HOME/$serverconfig" ; then
-			IFS=':' read -r -a node <<< $(grep "$2" "$HOME/$serverconfig")
-			#MODIFY FOR SPECIAL SSH CONSOLE
-			ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}"
-
-			exit 0
-		else
-			echo "Node $2 not found"
-			exit 1
-		fi
-	else
-		echo "Incorrect number of parameters passed with the $1 flag, please check $SCRIPTNAME -h"
-		exit 1
-	fi
-
+####	when introducing the nodes instead create fresh entries into .nodes instead of taking local copies	
 elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
 	if [ "$#" -eq 3 ]; then
 		if [ -f "$HOME/.ssh/$2" ] && grep -q "$2" "$HOME/$serverconfig" ; then
@@ -295,16 +296,16 @@ elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
 				IFS=':' read -r -a node2 <<< "$n2"
 				if ssh "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo ping" >&/dev/null ; then
 					if ssh "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "echo ping" >&/dev/null ; then
-						printf "Introducing Node $2 to $3..."
-						n2keytmp=$(ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i $HOME/.ssh/${node1[0]} "ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node2[0]} >&/dev/null && cat \$HOME/.ssh/${node2[0]}.pub && rm \$HOME/.ssh/${node2[0]}.pub && echo '$n2' >> $serverconfig")
+						printf "Generating keys at nodes..."
+						n2keytmp=$(ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i $HOME/.ssh/${node1[0]} "ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node2[0]} >&/dev/null && cat \$HOME/.ssh/${node2[0]}.pub && rm \$HOME/.ssh/${node2[0]}.pub")
 						n2key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n2keytmp && printf '%s@%s\n' "${node1[2]}" "${node1[0]}")
-						n1keytmp=$(ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i $HOME/.ssh/${node2[0]} "echo '$n2key' >> \$HOME/.ssh/authorized_keys; ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node1[0]} >&/dev/null && cat \$HOME/.ssh/${node1[0]}.pub && rm \$HOME/.ssh/${node1[0]}.pub && echo '$n1' >> $serverconfig")
+						n1keytmp=$(ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i $HOME/.ssh/${node2[0]} "echo '$n2key' >> \$HOME/.ssh/authorized_keys; ssh-keygen -t rsa -N '' -f \$HOME/.ssh/${node1[0]} >&/dev/null && cat \$HOME/.ssh/${node1[0]}.pub && rm \$HOME/.ssh/${node1[0]}.pub")
 						n1key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n1keytmp && printf '%s@%s\n' "${node2[2]}" "${node2[0]}")
 						echo "done"
-						echo "final steps..."
-						ssh -t "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys; ssh -t ${node2[2]}@${node2[1]} -p ${node2[3]} -i \$HOME/.ssh/${node2[0]} 'echo ping >&/dev/null'"
-						ssh -t "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "ssh -t ${node1[2]}@${node1[1]} -p ${node1[3]} -i \$HOME/.ssh/${node1[0]} 'echo ping >&/dev/null'"
-						printf "Nodes $2 and $3 are acquainted"
+						echo "Introducing Node $2 to $3..."
+						ssh -t "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys; ssh -t ${node2[2]}@${node2[1]} -p ${node2[3]} -i \$HOME/.ssh/${node2[0]} 'echo $n1 >> $serverconfig'"
+						ssh -t "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "ssh -t ${node1[2]}@${node1[1]} -p ${node1[3]} -i \$HOME/.ssh/${node1[0]} 'echo $n2 >> $serverconfig'"
+						echo "Nodes $2 and $3 are acquainted"
 						exit 0
 					else
 						echo "Node ${node2[0]} seems to be offline"
