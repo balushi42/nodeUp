@@ -1,5 +1,4 @@
-# nodeUp
-just bash practice :)
+# Introduction
 
 Update IP address records between nodes without using Dynamic DNS servers. The program mainly uses SSH & SCP for operations, to do so the script mainly relies on SSH Keys, managing the Node Name to ip:user:port:key translation. To link nodes or to create a new subnet you need 2 seperate nodes with different IP at minimum, the script offers an add and introduce flags which can be used to add a node to the subnet or introduce two nodes reducing the chain length. The script can also be run periodically to update known nodes with latest IP Address(from the ssh variables).
 
@@ -29,4 +28,4 @@ node3
 	--force [node]			forget given node, remove keys and records ONLY the local node
 
 # Known issues
-When introducing two nodes with -i the software may break if you dont manually connect to each node; Answer the trusted host question by connecting into each node and attemting to connect with -c or just update -u!
+-
