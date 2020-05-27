@@ -159,7 +159,7 @@ elif [ "$1" == "-a" ] || [ "$1" == "--add" ] ; then
 		echo "$rkey" >> "$HOME/.ssh/authorized_keys"; rkey=""
 
 		echo "Please allow me to connect.."
-		while ! ssh "$ruser@$3" -p "$4" -i "$HOME/.ssh/$2" "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> $serverconfig" >&/dev/null ; do sleep 2 ; done
+		while ! ssh "$ruser@$3" -p "$4" -i "$HOME/.ssh/$2" "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> \$HOME/$serverconfig" >&/dev/null ; do sleep 2 ; done
 		echo "Waiting for remote node to ping"
 		while ! grep -q "$2" "$HOME/$serverconfig" ; do sleep 0.5 ; done
 
@@ -196,7 +196,7 @@ elif [ "$1" == "-a" ] || [ "$1" == "--add" ] ; then
 		echo "Waiting for remote node to ping"
 		while ! grep -q "$rname" "$HOME/$serverconfig" ; do sleep 0.5 ; done
 		echo "Please allow me to connect.."
-		while ! ssh "$ruser@$rip" -p "$rport" -i "$HOME/.ssh/$rname" "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> $serverconfig" >&/dev/null ; do sleep 2 ; done
+		while ! ssh "$ruser@$rip" -p "$rport" -i "$HOME/.ssh/$rname" "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> \$HOME/$serverconfig" >&/dev/null ; do sleep 2 ; done
 		
 		echo "Entry has been recorded successfully"
 		exit 0
@@ -303,8 +303,8 @@ elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
 						n1key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n1keytmp && printf '%s@%s\n' "${node2[2]}" "${node2[0]}")
 						echo "done"
 						echo "Introducing Node $2 to $3..."
-						ssh -t "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys; ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i \$HOME/.ssh/${node2[0]} 'echo $n1 >> $serverconfig'"
-						ssh -t "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i \$HOME/.ssh/${node1[0]} 'echo $n2 >> $serverconfig'"
+						ssh -t "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys; ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i \$HOME/.ssh/${node2[0]} 'echo $n1 >> \$HOME/$serverconfig'"
+						ssh -t "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i \$HOME/.ssh/${node1[0]} 'echo $n2 >> \$HOME/$serverconfig'"
 						echo "Nodes $2 and $3 are acquainted"
 						exit 0
 					else
@@ -347,7 +347,7 @@ elif [ "$1" == "-u" ] || [ "$1" == "--update" ] || [ $# = 0 ]; then
 			fi
 		fi
 		printf "Sending my details to: ${node[2]}@${node[0]} on port ${node[3]}..."
-		if ! ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}" "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> $serverconfig" >&/dev/null ; then #send new copy of my ip address to the client
+		if ! ssh "${node[2]}@${node[1]}" -p "${node[3]}" -i "$HOME/.ssh/${node[0]}" "(printf '$servname:'; echo \$SSH_CLIENT | awk '{ printf \$1}'; printf ':$USER:$myport:$(date +%x:%H:%M:%S)\n') >> \$HOME/$serverconfig" >&/dev/null ; then #send new copy of my ip address to the client
 			echo "fail... Skipping"
 		else
 			echo "done"
