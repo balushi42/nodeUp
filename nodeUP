@@ -113,7 +113,7 @@ elif [ "$1" == "-l" ] || [ "$1" == "--list" ]; then
 elif [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "$SCRIPTNAME help page:"
 	printf "%25s\t-\t%s\n" "-h --help" "list help commands(this page)"
-	printf "%25s\t-\t%s\n" "-l --list" "list saved servers from $HOME/$serverconfig and check if they are online"
+	printf "%25s\t-\t%s\n" "-l --list" "list saved servers from $serverconfig and check if they are online"
 	printf "%25s\t-\t%s\n" "-u --update" "update known servers, send my ip address to known hosts"
 	printf "%25s\t-\t%s\n" "-cp --copy [src] [dst]" "copy a file from/to a known host (SCP)"
 	printf "%25s\t-\t%s\n" "-c --connect [node]" "connect to a known host (SSH)"
@@ -303,8 +303,8 @@ elif [ "$1" == "-i" ] || [ "$1" == "--introduce" ]; then
 						n1key=$(awk '{printf $1; printf " "; printf $2; printf " "}' <<< $n1keytmp && printf '%s@%s\n' "${node2[2]}" "${node2[0]}")
 						echo "done"
 						echo "Introducing Node $2 to $3..."
-						ssh -t "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys; ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i \$HOME/.ssh/${node2[0]} 'echo $n1 >> \$HOME/$serverconfig'"
-						ssh -t "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i \$HOME/.ssh/${node1[0]} 'echo $n2 >> \$HOME/$serverconfig'"
+						ssh -t "${node1[2]}@${node1[1]}" -p "${node1[3]}" -i "$HOME/.ssh/${node1[0]}" "echo '$n1key' >> \$HOME/.ssh/authorized_keys; ssh ${node2[2]}@${node2[1]} -p ${node2[3]} -i \$HOME/.ssh/${node2[0]} 'echo $n1 >> ~/$serverconfig'"
+						ssh -t "${node2[2]}@${node2[1]}" -p "${node2[3]}" -i "$HOME/.ssh/${node2[0]}" "ssh ${node1[2]}@${node1[1]} -p ${node1[3]} -i \$HOME/.ssh/${node1[0]} 'echo $n2 >> ~/$serverconfig'"
 						echo "Nodes $2 and $3 are acquainted"
 						exit 0
 					else
