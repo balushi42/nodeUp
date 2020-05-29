@@ -8,6 +8,7 @@ copy config /
 RUN apk update && apk upgrade && apk add bash \
 		bash-completion \
 		openssh \
+		curl \
 		&& rm -f /var/cache/apk/* \
 		&& adduser --disabled-password -s /bin/bash $user \
 		&& sed -i -e 's/#PermitRootLogin prohibit-password/PermitRootLogin no/g' -e 's/#PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config \
