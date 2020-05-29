@@ -28,7 +28,8 @@ Ignoring hosts: to prevent the script from transmitting a given host, please add
 	--force [node]			forget given node, remove keys and records ONLY the local node
 
 # Docker
-	Edit the "config" file before building! specify node name and port used.
+Edit the "config" file before building! specify node name and port used. commands:
+
 	docker build -t node .
 	docker run -dit --name node1 node
 	docker exec node1 ./nodeUP -h
