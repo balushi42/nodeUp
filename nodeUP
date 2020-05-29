@@ -62,7 +62,7 @@ if [[ ! "$DIR" =~ $HOME/bin ]] ; then
 	if [ ! -d "$HOME/bin" ] ; then mkdir "$HOME/bin" ; fi
 	ME=`basename "$0"`
 	cp "$DIR/$ME" "$HOME/bin/$SCRIPTNAME"
-	echo "Please logout and back in for effects to take place!"
+	echo "Copied script file to ~/bin; Please logout and back in for effects to take place!"
 	echo "You may use the command $SCRIPTNAME -h for the help page"
 	exit 0
 fi
