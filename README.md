@@ -10,10 +10,10 @@ On the first script run you will have the option to decide if the current node s
 
 Ignoring hosts: to prevent the script from transmitting a given host, please add the "node name" of the host into the file .nodes.ignore
 ### Example cat of .nodes.ignore(create if missing):
-```
-node1
-node3
-```
+
+	node1
+	node3
+
 ...each node on a new line
 
 # functions:
@@ -26,6 +26,12 @@ node3
 	-i --introduce [node] [node]	introduce two nodes to one another
 	-f --forget [node]		forget given node, remove keys and records from both local and remote nodes
 	--force [node]			forget given node, remove keys and records ONLY the local node
+
+# Docker
+	Edit the "config" file before building! specify node name and port used.
+	docker build -t node .
+	docker run -dit --name node1 node
+	docker exec node1 ./nodeUP -h
 
 # Known issues
 -
