@@ -1,6 +1,7 @@
 # change this to desired name
 servname=NODENAME
 
-
+# change to docker published port or external SSH port
 myport=22
+
 repeat=false
