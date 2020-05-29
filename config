@@ -1,0 +1,6 @@
+# change this to desired name
+servname=NODENAME
+
+
+myport=22
+repeat=false
