@@ -31,8 +31,10 @@ Ignoring hosts: to prevent the script from transmitting a given host, please add
 Edit the "config" file before building! specify node name and port used. commands:
 
 	docker build -t node .
-	docker run -p 127.0.0.1:port:22 -dt --name node1 node
-	docker exec -it node1 ./nodeUP -h
+	#start container & ssh service
+	docker run -dt --rm --publish=2221:22 --name node1 node
+	#open bash shell as node USER
+	docker exec -it -u USER node1 /bin/bash
 	
 
 # Known issues
