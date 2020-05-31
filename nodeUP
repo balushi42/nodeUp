@@ -6,6 +6,7 @@
 # create feature to keep code updated between the nodes, check when to download from node when majority provides same src hash?
 # make scripts check if anyone on subnet has different serverconfig or servername setup and respond accordingly
 # create a local record of my ip address once subnet is populated to remove need for external service
+# sync https://www.rlocman.ru/i/File/2007/10/24/2006_WSL_Firefly_Synchronization_Ad_Hoc_Networks.pdf
 #
 ########################    	Extra details		########################
 ############################################################################
