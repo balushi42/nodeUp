@@ -33,9 +33,9 @@ Edit the "config" file before building! specify node name and port used. command
 	docker build -t node .
 	#start container & ssh service
 	docker run -dt --rm --publish=2221:22 --name node1 node
-	#open bash shell as node USER
-	docker exec -it -u USER node1 /bin/bash
+	#open bash shell as node user bit(default created)
+	docker exec -it -u bit node1 /bin/bash
 	
 
 # Known issues
--
+- ssh into containered node gives unknown user error(Alpine container setup problems)
