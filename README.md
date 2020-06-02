@@ -5,15 +5,23 @@ Update IP address records between nodes without using Dynamic DNS servers. The p
 Information stored and accessable by the nodes account may be tampered with by others who have access to the subnet; therefore assume nodes as PUBLIC SPACE keep accounts secure!
 Note: preferably create a secured account then copy the script into the users home directory and run as the newly created account...
 
+# Usage
+To setup the current user as a node use following commands:
+	
+	chmod +x nodeUP
+	./nodeUP
+
+for docker see below
+
 # Repeater mode
 On the first script run you will have the option to decide if the current node should be treated as a repeater. When using the current node as a repeater, the script will introduce all locally known hosts(except noted in .ignore) to the current remote node being updated. Then the script concludes by writing the local IP into the remote node '.nodes' file
 
 Ignoring hosts: to prevent the script from transmitting a given host, please add the "node name" of the host into the file .nodes.ignore
 ### Example cat of .nodes.ignore(create if missing):
-```
-node1
-node3
-```
+
+	node1
+	node3
+
 ...each node on a new line
 
 # functions:
@@ -27,5 +35,15 @@ node3
 	-f --forget [node]		forget given node, remove keys and records from both local and remote nodes
 	--force [node]			forget given node, remove keys and records ONLY the local node
 
+# Docker
+Edit the "config" file before building! specify node name and port used. commands:
+
+	docker build -t node .
+	#start container & ssh service
+	docker run -dt --rm --publish=2221:22 --name node1 node
+	#open bash shell as root user
+	docker exec -it node1 /bin/bash
+	
+
 # Known issues
--
+- ssh from some clients into docker nodes gives error? putty specifically
