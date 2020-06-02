@@ -5,6 +5,14 @@ Update IP address records between nodes without using Dynamic DNS servers. The p
 Information stored and accessable by the nodes account may be tampered with by others who have access to the subnet; therefore assume nodes as PUBLIC SPACE keep accounts secure!
 Note: preferably create a secured account then copy the script into the users home directory and run as the newly created account...
 
+# Usage
+To setup the current user as a node use following commands:
+	
+	chmod +x nodeUP
+	./nodeUP
+
+for docker see below
+
 # Repeater mode
 On the first script run you will have the option to decide if the current node should be treated as a repeater. When using the current node as a repeater, the script will introduce all locally known hosts(except noted in .ignore) to the current remote node being updated. Then the script concludes by writing the local IP into the remote node '.nodes' file
 
