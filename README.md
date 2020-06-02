@@ -38,4 +38,4 @@ Edit the "config" file before building! specify node name and port used. command
 	
 
 # Known issues
-- ssh into containered node gives unknown user error(Alpine container setup problems)
+- ssh from some clients into docker nodes gives error? putty specifically
